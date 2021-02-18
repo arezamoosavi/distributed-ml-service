@@ -1,0 +1,41 @@
+version: "3.2"
+
+services:
+  celery: &base_app
+    build:
+      context: .
+      dockerfile: ./container/Dockerfile
+    env_file:
+      - ./container/.env_vars
+    volumes:
+      - ./src:/main
+    restart: unless-stopped
+    # command: sh /run_celery.sh
+    command: sleep infinity
+  apis:
+    <<: *base_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - celery
+    command: sh /run_web.sh
+  flower:
+    container_name: flower
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=amqp://admin:mypass@rabbitmq:5672
+      - FLOWER_PORT=8888
+    depends_on:
+      - rabbitmq
+      - celery
+    ports:
+      - "8888:8888"
+  rabbitmq:
+    image: rabbitmq:3.8.3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=mypass
+    ports:
+      - "5672:5672"
+    hostname: rabbitmq
+    restart: unless-stopped

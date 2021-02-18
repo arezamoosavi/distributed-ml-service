@@ -1,0 +1,29 @@
+# APIs
+# ------------------------------------------------------------------------------
+starlette==0.13.6
+uvicorn==0.11.8
+fastapi==0.61.1
+pydantic==1.6.1
+python-multipart==0.0.5
+httpx==0.12.1
+asyncio
+asgiref
+syncer
+python-dateutil
+
+# Celery-ML
+# ------------------------------------------------------------------------------
+numpy
+pandas
+scikit_learn
+kombu
+kombu-sqlalchemy
+simple-settings
+celery==4.4.2
+celery[redis]
+celery[eventlet]
+amqp
+redis
+eventlet
+dnspython
+requests
