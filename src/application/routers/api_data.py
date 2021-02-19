@@ -35,7 +35,7 @@ async def load_data(dataset: UploadFile = File(None),):
     md5.update(read_file)
     hash_id = md5.hexdigest()
 
-    json_data = get_data_if_exists({"field": "hash_id", "val": hash_id}, "dataset")
+    json_data = get_data_if_exists({"pk_field": "hash_id", "pk_val": hash_id}, "dataset")
     if json_data:
         return JSONResponse(
             content={"info": "ok", "data_id": json_data["dataset_id"]}, status_code=200

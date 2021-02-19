@@ -1,8 +1,7 @@
-import os, io, uuid
+import uuid, json
 import logging
 
 import tempfile
-import joblib
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
@@ -10,7 +9,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from celery.result import AsyncResult
 
-from application.utils.mysql_db import insert_json_data
+from application.utils.mysql_db import insert_json_data, get_data_if_exists
 from application.utils.minio_connection import MinioClient
 from application.celery_app.tasks import train_clf
 
@@ -28,6 +27,8 @@ except Exception as e:
     logging.error(str(e))
 
 router = APIRouter()
+
+result_fields = ["model_type", "duration", "class_column", "feature_column", "test_ratio", "duration", "result"]
 
 
 class TrainModel(BaseModel):
@@ -82,32 +83,40 @@ async def train_model(data: TrainModel):
 @router.post("/model_result/")
 async def model_result(data: ResultModel):
     model_id = data.model_id
-    async_result = AsyncResult(model_id)
-    if async_result.ready():
-        res_status = "ready"
-        res_data = async_result.result
-    else:
-        res_status = "pending"
-        res_data = "null"
+    try:
+        async_result = AsyncResult(model_id)
+        if async_result.ready():
+            res_status = "ready"
+            # res_data = async_result.result
+            json_data = get_data_if_exists({"pk_field": "model_id", "pk_val": model_id}, "model_training")
+            json_data["result"] = json.loads(json_data["result"])
+        else:
+            res_status = "pending"
+            res_data = "null"
+    except Exception as e:
+        logging.error(f"something went wrong: {str(e)}")
+        return JSONResponse(content={"info": "app_error"}, status_code=400)
 
     return JSONResponse(
-        content={"info": "ok", "status": res_status, "test_result": res_data},
+        content={"info": "ok", "status": res_status,
+                 "test_result": {k: v for k, v in json_data.items() if k in result_fields}},
         status_code=200,
     )
 
 
 @router.post("/download_model/")
 async def download_model(data: ResultModel):
+    model_id = data.model_id
     try:
         with tempfile.NamedTemporaryFile(mode="w+b", suffix=".joblib", delete=False) as tmp:
-            minio_client.fget_object("models", f"{data.model_id}.joblib", tmp.name)
+            minio_client.fget_object("models", f"{model_id}.joblib", tmp.name)
 
     except Exception as e:
         logging.error(f"something went wrong: {str(e)}")
         return JSONResponse(content={"info": "model not found"}, status_code=400)
 
-    response = FileResponse(tmp.name,  status_code=200)
-    response.headers["Content-Disposition"] = "attachment; filename={}.joblib".format(data.model_id)
+    response = FileResponse(tmp.name, status_code=200)
+    response.headers["Content-Disposition"] = "attachment; filename={}.joblib".format(model_id)
     return response
 
 

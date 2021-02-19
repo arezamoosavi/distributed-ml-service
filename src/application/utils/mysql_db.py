@@ -85,7 +85,7 @@ def update_json_data(data, table_name):
 def get_data_if_exists(field_val: dict, table_name: str):
     with engine.connect() as con:
         query = """SELECT * FROM {} WHERE {} = '{}'""".format(
-            table_name, field_val["field"], field_val["val"]
+            table_name, field_val["pk_field"], field_val["pk_val"]
         )
         result = con.execute(query).first()
         json_res = dict(result.items()) if result else None
