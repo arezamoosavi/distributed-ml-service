@@ -10,8 +10,8 @@ services:
     volumes:
       - ./src:/main
     restart: unless-stopped
-    # command: sh /run_celery.sh
-    command: sleep infinity
+    command: sh /run_celery.sh
+    # command: sleep infinity
   apis:
     <<: *base_app
     ports:
@@ -34,6 +34,7 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=mypass
     ports:
+      - "15672:15672"
       - "5672:5672"
     hostname: rabbitmq
     restart: unless-stopped

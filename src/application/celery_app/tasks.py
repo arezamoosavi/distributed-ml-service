@@ -37,7 +37,7 @@ except Exception as e:
 def train_clf(data_json):
 
     # get csv data
-    file_data = minio_client.get_object("dataset", data_json["dataset_id"])
+    file_data = minio_client.get_object("dataset", f'{data_json["dataset_id"]}.csv')
     buffer_data = io.BytesIO(file_data.data)
     df = pd.read_csv(buffer_data)
 
@@ -75,16 +75,19 @@ def train_clf(data_json):
     else:
         json_result = "model is wrong"
 
+    json_result=json.dumps(json_result)
     res_data = {
         "pk_field": "model_id",
         "model_id": current_task.request.id,
-        "update_data": {"duration": duration, "result": json.dumps(json_result),},
+        "update_data": {"duration": duration, "result": json_result,},
     }
 
+    # save to minio
+    
     # save to mysql
     try:
         update_json_data(res_data, "model_training")
     except Exception as e:
         logging.error(f"something went wrong: {str(e)}")
 
-    return res_data["result"]
+    return json_result, duration
