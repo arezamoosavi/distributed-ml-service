@@ -5,7 +5,6 @@ from datetime import datetime
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from celery.result import AsyncResult
 
 from application.utils.mysql_db import insert_json_data, get_data_if_exists
 from application.utils.minio_connection import MinioClient

@@ -2,7 +2,16 @@ import sqlalchemy
 
 from sqlalchemy import inspect
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, BigInteger, DateTime, MetaData, Text
+from sqlalchemy import (
+    Table,
+    Column,
+    Integer,
+    BigInteger,
+    DateTime,
+    MetaData,
+    Text,
+    Float,
+)
 from sqlalchemy.sql import text, func
 
 engine = create_engine(
@@ -27,11 +36,14 @@ model_training = Table(
     "model_training",
     metadata,
     Column("id", BigInteger, primary_key=True),
-    Column("model_id", BigInteger, nullable=True, default=""),
+    Column("model_id", Text, nullable=True, default=""),
     Column("dataset_id", Text, nullable=True, default=""),
     Column("model_type", Text, nullable=True, default=""),
     Column("class_column", Text, nullable=True, default=""),
+    Column("feature_column", Text, nullable=True, default=""),
+    Column("test_ratio", Float, nullable=True, default=""),
     Column("result", Text, nullable=True, default=""),
+    Column("duration", Float, nullable=True, default=""),
     Column("started", DateTime(timezone=True), server_default=func.now()),
     Column("finished", DateTime(timezone=True), onupdate=func.now()),
 )
@@ -53,6 +65,21 @@ def insert_json_data(data, table_name):
         con.execute(statement(data), **data)
 
 
+def update_json_data(data, table_name):
+    with engine.connect() as con:
+
+        # create SET:
+        set_data = ""
+        for k, v in data["update_data"]:
+            set_data += "{0} = '{1}',".format(k, v)
+
+        query = """Update {0} set {1} where {2} = '{3}'""".format(
+            table_name, set_data[:-1], data["pk_field"], data[data["pk_field"]]
+        )
+
+        con.execute(query)
+
+
 def get_data_if_exists(field_val: dict, table_name: str):
     with engine.connect() as con:
 
@@ -61,5 +88,4 @@ def get_data_if_exists(field_val: dict, table_name: str):
         )
         result = con.execute(query).first()
         json_res = dict(result.items()) if result else None
-        print(json_res)
         return json_res
