@@ -1,4 +1,4 @@
-import sqlalchemy
+import os
 
 from sqlalchemy import inspect
 from sqlalchemy import create_engine
@@ -14,9 +14,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import text, func
 
+SQL_HOST = os.getenv("SQL_HOST")
+SQL_PORT = int(os.getenv("SQL_PORT"))
+SQL_USER = os.getenv("SQL_USER")
+SQL_PASS = os.getenv("SQL_PASS")
+SQL_DB = os.getenv("SQL_DB")
+
 engine = create_engine(
     "mysql+mysqldb://{0}:{1}@{2}:{3}/{4}?charset=utf8mb4".format(
-        "mainuser", "mainpass", "mysql", 3306, "maindb"
+        SQL_USER, SQL_PASS, SQL_HOST, SQL_PORT, SQL_DB
     )
 )
 
@@ -31,7 +37,6 @@ dataset = Table(
     Column("hash_id", Text, nullable=True, default=""),
 )
 
-
 model_training = Table(
     "model_training",
     metadata,
@@ -44,10 +49,9 @@ model_training = Table(
     Column("test_ratio", Float, nullable=True, default=""),
     Column("result", Text, nullable=True, default=""),
     Column("duration", Float, nullable=True, default=""),
-    Column("started", DateTime(timezone=True), server_default=func.now()),
-    Column("finished", DateTime(timezone=True), onupdate=func.now()),
+    Column("started", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("finished", DateTime(timezone=True), nullable=False, onupdate=func.current_timestamp()),
 )
-
 
 metadata.create_all(engine)
 inspector = inspect(engine)
@@ -55,7 +59,6 @@ inspector = inspect(engine)
 
 def insert_json_data(data, table_name):
     with engine.connect() as con:
-
         statement = lambda x: text(
             """INSERT INTO {}({}) VALUES(:{})""".format(
                 table_name, ",  ".join(x), ", :".join(x)
@@ -67,22 +70,20 @@ def insert_json_data(data, table_name):
 
 def update_json_data(data, table_name):
     with engine.connect() as con:
-
         # create SET:
         set_data = ""
-        for k, v in data["update_data"]:
-            set_data += "{0} = '{1}',".format(k, v)
+        for k, v in data["update_data"].items():
+            set_data += "{} = '{}',".format(k, v)
 
-        query = """Update {0} set {1} where {2} = '{3}'""".format(
+        query = """Update {} set {} where {} = '{}'""".format(
             table_name, set_data[:-1], data["pk_field"], data[data["pk_field"]]
         )
 
-        con.execute(query)
+        con.execute(text(query))
 
 
 def get_data_if_exists(field_val: dict, table_name: str):
     with engine.connect() as con:
-
         query = """SELECT * FROM {} WHERE {} = '{}'""".format(
             table_name, field_val["field"], field_val["val"]
         )

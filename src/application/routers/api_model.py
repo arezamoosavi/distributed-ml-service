@@ -1,23 +1,17 @@
-import os, io, hashlib, uuid
+import os, io, uuid
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from celery.result import AsyncResult
 
-from application.utils.mysql_db import insert_json_data
+from application.utils.mysql_db import insert_json_data, update_json_data
 from application.utils.minio_connection import MinioClient
 from application.celery_app.tasks import train_clf
 
 # logging
-LOGS_DIR = os.getenv("LOGS_DIR")
-os.makedirs(LOGS_DIR, exist_ok=True)
-
-dir_name = str(datetime.now().strftime("%d_%m_%Y"))
 logging.basicConfig(
-    filename=LOGS_DIR + dir_name + ".log",
     level=logging.DEBUG,
     format="%(asctime)s | {%(pathname)s:%(lineno)d} | %(module)s | %(levelname)s | %(funcName)s | %(message)s",
 )
@@ -60,7 +54,7 @@ async def train_model(data: TrainModel):
     """
     try:
         json_data = data.dict()
-        task_obj = train_clf.apply_async((json_data,))
+        task_obj = train_clf.apply_async((json_data,), task_id=uuid.uuid4().hex)
         json_data["model_id"] = task_obj.id
 
         logging.info(f"task token {task_obj.id} is started!")
@@ -100,7 +94,7 @@ async def model_result(data: ResultModel):
 
 @router.post("/download_model/")
 async def download_model(data: ResultModel):
-    return JSONResponse(content={"info": "ok"}, status_code=200,)
+    return JSONResponse(content={"info": "ok"}, status_code=200, )
 
 
 @router.get("/model_types/")

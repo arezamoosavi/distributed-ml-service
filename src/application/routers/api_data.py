@@ -1,22 +1,15 @@
 import os, io, hashlib, uuid
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from application.utils.mysql_db import insert_json_data, get_data_if_exists
 from application.utils.minio_connection import MinioClient
 
 
 # logging
-LOGS_DIR = os.getenv("LOGS_DIR")
-os.makedirs(LOGS_DIR, exist_ok=True)
-
-dir_name = str(datetime.now().strftime("%d_%m_%Y"))
 logging.basicConfig(
-    filename=LOGS_DIR + dir_name + ".log",
     level=logging.DEBUG,
     format="%(asctime)s | {%(pathname)s:%(lineno)d} | %(module)s | %(levelname)s | %(funcName)s | %(message)s",
 )
