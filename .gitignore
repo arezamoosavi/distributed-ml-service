@@ -111,5 +111,3 @@ pip-selfcheck.json
 .vscode
 
 *.db
-src/hands_on
-src/logs
