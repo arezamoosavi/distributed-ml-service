@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from celery.result import AsyncResult
 
-from application.utils.mysql_db import insert_json_data, update_json_data
+from application.utils.mysql_db import insert_json_data
 from application.utils.minio_connection import MinioClient
 from application.celery_app.tasks import train_clf
 

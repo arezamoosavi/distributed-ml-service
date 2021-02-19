@@ -2,6 +2,9 @@ import io, os, time, json
 import logging
 from datetime import datetime
 
+import tempfile
+import joblib
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -40,7 +43,7 @@ def train_clf(data_json):
         res_data = {
             "pk_field": "model_id",
             "model_id": current_task.request.id,
-            "update_data": {"duration": 0, "result": msg_result, },
+            "update_data": {"finished": datetime.now(), "duration": 0, "result": msg_result, },
         }
         try:
             update_json_data(res_data, "model_training")
@@ -63,7 +66,7 @@ def train_clf(data_json):
         res_data = {
             "pk_field": "model_id",
             "model_id": current_task.request.id,
-            "update_data": {"duration": 0, "result": msg_result, },
+            "update_data": {"finished": datetime.now(), "duration": 0, "result": msg_result, },
         }
         try:
             update_json_data(res_data, "model_training")
@@ -71,27 +74,25 @@ def train_clf(data_json):
             pass
         return msg_result
 
-    # training
-
+    # training with selecting models!
     tic = time.time()
-    model = None
     try:
         if data_json["model_type"] == "logistic_regression":
             model = LogisticRegression()
-            model.fit(X_train, y_train)
         elif data_json["model_type"] == "random_forest":
             model = RandomForestClassifier()
-            model.fit(X_train, y_train)
-            # model.fit(X_train, y_train.values.ravel())
         else:
             raise Exception("model name not found!")
+
+        model.fit(X_train, y_train)
     except Exception as e:
+
         msg_result = "model name not found!"
         logging.error(msg_result + f": {str(e)}")
         res_data = {
             "pk_field": "model_id",
             "model_id": current_task.request.id,
-            "update_data": {"duration": 0, "result": msg_result, },
+            "update_data": {"finished": datetime.now(), "duration": 0, "result": msg_result, },
         }
         try:
             update_json_data(res_data, "model_training")
@@ -112,7 +113,7 @@ def train_clf(data_json):
         res_data = {
             "pk_field": "model_id",
             "model_id": current_task.request.id,
-            "update_data": {"duration": 0, "result": msg_result, },
+            "update_data": {"finished": datetime.now(), "duration": 0, "result": msg_result, },
         }
         try:
             update_json_data(res_data, "model_training")
@@ -123,12 +124,25 @@ def train_clf(data_json):
     res_data = {
         "pk_field": "model_id",
         "model_id": current_task.request.id,
-        "update_data": {"duration": duration, "result": json.dumps(json_result), },
+        "update_data": {"finished": datetime.now(), "duration": duration, "result": json.dumps(json_result), },
     }
 
     # save to minio
+    logging.info("Write to minio: ")
+    with tempfile.TemporaryFile() as fp:
+        joblib.dump(model, fp)
+        fp.seek(0)
+        _buffer = io.BytesIO(fp.read())
+        _length = _buffer.getbuffer().nbytes
+        minio_client.put_object(
+            bucket_name="models",
+            object_name=f"{res_data['model_id']}.joblib",
+            data=_buffer,
+            length=_length,
+        )
+    logging.info("Saved to minio: ")
 
-    # save to mysql
+    # save results to mysql
     try:
         update_json_data(res_data, "model_training")
     except Exception as e:

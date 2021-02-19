@@ -50,7 +50,7 @@ model_training = Table(
     Column("result", Text, nullable=True, default=""),
     Column("duration", Float, nullable=True, default=""),
     Column("started", DateTime(timezone=True), nullable=False, server_default=func.now()),
-    Column("finished", DateTime(timezone=True), nullable=False, onupdate=func.current_timestamp()),
+    Column("finished", DateTime(timezone=True), onupdate=func.current_timestamp()),
 )
 
 metadata.create_all(engine)
