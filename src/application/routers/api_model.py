@@ -104,7 +104,7 @@ async def download_model(data: ResultModel):
 
     except Exception as e:
         logging.error(f"something went wrong: {str(e)}")
-        return JSONResponse(content={"info": "app_error"}, status_code=400)
+        return JSONResponse(content={"info": "model not found"}, status_code=400)
 
     response = FileResponse(tmp.name,  status_code=200)
     response.headers["Content-Disposition"] = "attachment; filename={}.joblib".format(data.model_id)

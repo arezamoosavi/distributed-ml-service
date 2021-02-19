@@ -12,8 +12,6 @@ COPY container/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && rm -rf requirements.txt
 
-RUN pip install --no-cache-dir jupyterlab
-RUN pip install --no-cache-dir aiofiles==0.6.0
 RUN mkdir -p /main
 COPY ./src /main
 
