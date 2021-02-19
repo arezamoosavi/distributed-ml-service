@@ -17,7 +17,7 @@ dataset = Table(
     "dataset",
     metadata,
     Column("id", BigInteger, primary_key=True),
-    Column("created_at", DateTime(timezone=True), nullable=True, default=func.now()),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column("dataset_id", Text, nullable=True, default=""),
     Column("hash_id", Text, nullable=True, default=""),
 )
@@ -32,8 +32,8 @@ model_training = Table(
     Column("model_type", Text, nullable=True, default=""),
     Column("class_column", Text, nullable=True, default=""),
     Column("result", Text, nullable=True, default=""),
-    Column("started", DateTime(timezone=True), nullable=True, default=""),
-    Column("finished", DateTime(timezone=True), nullable=True, default=""),
+    Column("started", DateTime(timezone=True), server_default=func.now()),
+    Column("finished", DateTime(timezone=True), onupdate=func.now()),
 )
 
 
@@ -60,5 +60,6 @@ def get_data_if_exists(field_val: dict, table_name: str):
             table_name, field_val["field"], field_val["val"]
         )
         result = con.execute(query).first()
-
-        return dict(result.items()) if result else None
+        json_res = dict(result.items()) if result else None
+        print(json_res)
+        return json_res
