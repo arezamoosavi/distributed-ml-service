@@ -10,6 +10,9 @@ asyncio
 asgiref
 syncer
 python-dateutil
+minio==6.0.0
+SQLAlchemy==1.2.8
+mysqlclient==1.3.4
 
 # Celery-ML
 # ------------------------------------------------------------------------------

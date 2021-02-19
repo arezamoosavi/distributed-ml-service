@@ -109,3 +109,6 @@ pip-selfcheck.json
 .ipynb_checkpoints/
 
 .vscode
+
+src/hands_on
+src/logs
