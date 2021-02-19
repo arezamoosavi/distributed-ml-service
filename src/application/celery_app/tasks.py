@@ -129,18 +129,32 @@ def train_clf(data_json):
 
     # save to minio
     logging.info("Write to minio: ")
-    with tempfile.TemporaryFile() as fp:
-        joblib.dump(model, fp)
-        fp.seek(0)
-        _buffer = io.BytesIO(fp.read())
-        _length = _buffer.getbuffer().nbytes
-        minio_client.put_object(
-            bucket_name="models",
-            object_name=f"{res_data['model_id']}.joblib",
-            data=_buffer,
-            length=_length,
-        )
-    logging.info("Saved to minio: ")
+    try:
+        with tempfile.TemporaryFile() as fp:
+            joblib.dump(model, fp)
+            fp.seek(0)
+            _buffer = io.BytesIO(fp.read())
+            _length = _buffer.getbuffer().nbytes
+            minio_client.put_object(
+                bucket_name="models",
+                object_name=f"{res_data['model_id']}.joblib",
+                data=_buffer,
+                length=_length,
+            )
+        logging.info("Saved to minio: ")
+    except Exception as e:
+        msg_result = "error when trying to save the model, try again later!"
+        logging.error(msg_result + f": {str(e)}")
+        res_data = {
+            "pk_field": "model_id",
+            "model_id": current_task.request.id,
+            "update_data": {"finished": datetime.now(), "duration": duration, "result": msg_result, },
+        }
+        try:
+            update_json_data(res_data, "model_training")
+        except:
+            pass
+        return msg_result
 
     # save results to mysql
     try:
