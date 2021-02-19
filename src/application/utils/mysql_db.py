@@ -61,6 +61,4 @@ def get_data_if_exists(field_val: dict, table_name: str):
         )
         result = con.execute(query).first()
 
-        print("\n \n results: ", dict(result.items()), "\n \n")
-
         return dict(result.items()) if result else None

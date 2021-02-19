@@ -19,9 +19,4 @@ logging.basicConfig(
 app = FastAPI()
 
 
-@app.get("/")
-async def root():
-    return {"Hello to": "ML Training PIPELINE APP!", "GO to": "/docs"}
-
-
 app.include_router(api_data.router, prefix="/v1", tags=["v1"])
