@@ -39,7 +39,43 @@ mysql
 ```bash
 http://localhost:3306
 ```
-## More Documnt
+## Example
+In the example directory there is advertising.csv file as dataset:
+### Loading data
+The api returns this:
+```json
+{
+  "info": "ok",
+  "data_id": "cfe3ee4dcf8448038cbe386b54a4cae2"
+}
+```
+### Train Classifier
+The data for posting would be like this:
+ ```json
+{
+  "dataset_id": "cfe3ee4dcf8448038cbe386b54a4cae2",
+  "model_type": "random_forest",
+  "class_column": "Clicked on Ad",
+  "feature_column": "Daily Time Spent on Site,Age,Area Income,Daily Internet Usage,Male",
+  "test_ratio": 0.3
+}
+```
+Then the api returns:
+```json
+{
+  "info": "ok",
+  "model_id": "0bb58a0465c544eb8ccc4d0300a0ec79"
+}
+```
+### Model results and Download
+Only model_id is enough:
+```json
+{
+  "model_id": "0bb58a0465c544eb8ccc4d0300a0ec79"
+}
+```
+## More
+A simple version of the app is deployed on heroku and it is here:
 #### [ml-pipe.herokuapp.com](https://ml-pipe.herokuapp.com/docs#/)
 ### [Medium](https://medium.com/@sdamoosavi/ml-microservice-with-nameko-to-implement-a-predictive-maintenance-application-f59d4ed60be3)
 
