@@ -4,16 +4,16 @@ In this project based on user's dataset and required model type the a classifier
 ## Run
 
 for running the project:
-###first
+### first
 ```bash
 docker-compose up -d mysql minio rabbitmq
 ```
 After stable running:
-###second
+### second
 ```bash
 docker-compose up -d celery flower apis
 ```
-##stop and remove
+## stop and remove
 ```bash
 docker-compose down -v
 ```
@@ -40,6 +40,6 @@ mysql
 http://localhost:3306
 ```
 ## More Documnt
-####[ml-pipe.herokuapp.com](https://ml-pipe.herokuapp.com/docs#/)
+#### [ml-pipe.herokuapp.com](https://ml-pipe.herokuapp.com/docs#/)
 ### [Medium](https://medium.com/@sdamoosavi/ml-microservice-with-nameko-to-implement-a-predictive-maintenance-application-f59d4ed60be3)
 
