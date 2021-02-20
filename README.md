@@ -77,5 +77,5 @@ Only model_id is enough:
 ## More
 A simple version of the app is deployed on heroku and it is here:
 #### [ml-pipe.herokuapp.com](https://ml-pipe.herokuapp.com/docs#/)
-### [Medium](https://medium.com/@sdamoosavi/ml-microservice-with-nameko-to-implement-a-predictive-maintenance-application-f59d4ed60be3)
+### [Medium](https://sdamoosavi.medium.com/asynchronouse-distributed-ml-platform-751e3beee333)
 
