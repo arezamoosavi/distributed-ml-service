@@ -92,7 +92,7 @@ async def model_result(data: ResultModel):
             json_data["result"] = json.loads(json_data["result"])
         else:
             res_status = "pending"
-            res_data = "null"
+            return JSONResponse(content={"info": "wait", "status": res_status}, status_code=404)
     except Exception as e:
         logging.error(f"something went wrong: {str(e)}")
         return JSONResponse(content={"info": "app_error"}, status_code=400)
