@@ -1,7 +1,5 @@
-import uuid, json
+import os, uuid, json
 import logging
-
-import tempfile
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
@@ -9,22 +7,14 @@ from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from celery.result import AsyncResult
 
-from application.utils.mysql_db import insert_json_data, get_data_if_exists
-from application.utils.minio_connection import MinioClient
-from application.celery_app.tasks import train_clf
+from utils.mysql_db import insert_json_data, get_data_if_exists
+from celery_app.tasks import train_clf
 
 # logging
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s | {%(pathname)s:%(lineno)d} | %(module)s | %(levelname)s | %(funcName)s | %(message)s",
 )
-
-try:
-    minio_obj = MinioClient()
-    minio_client = minio_obj.client()
-    minio_client.make_bucket("models")
-except Exception as e:
-    logging.error(str(e))
 
 router = APIRouter()
 
@@ -68,7 +58,7 @@ async def train_model(data: TrainModel):
         logging.error(f"something went wrong: {str(e)}")
         return JSONResponse(content={"info": "app_error"}, status_code=400)
 
-    # save record to mysql
+    # save record to db
     try:
         insert_json_data(json_data, "model_training")
     except Exception as e:
@@ -92,7 +82,7 @@ async def model_result(data: ResultModel):
             json_data["result"] = json.loads(json_data["result"])
         else:
             res_status = "pending"
-            res_data = "null"
+            return JSONResponse(content={"info": "wait", "status": res_status}, status_code=404)
     except Exception as e:
         logging.error(f"something went wrong: {str(e)}")
         return JSONResponse(content={"info": "app_error"}, status_code=400)
@@ -107,15 +97,9 @@ async def model_result(data: ResultModel):
 @router.post("/download_model/")
 async def download_model(data: ResultModel):
     model_id = data.model_id
-    try:
-        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".joblib", delete=False) as tmp:
-            minio_client.fget_object("models", f"{model_id}.joblib", tmp.name)
 
-    except Exception as e:
-        logging.error(f"something went wrong: {str(e)}")
-        return JSONResponse(content={"info": "model not found"}, status_code=400)
-
-    response = FileResponse(tmp.name, status_code=200)
+    model_path = os.path.join(os.getcwd(), "storage", f"{model_id}.joblib")
+    response = FileResponse(model_path, status_code=200)
     response.headers["Content-Disposition"] = "attachment; filename={}.joblib".format(model_id)
     return response
 

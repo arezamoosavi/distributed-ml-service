@@ -6,7 +6,6 @@ from sqlalchemy import (
     Table,
     Column,
     Integer,
-    BigInteger,
     DateTime,
     MetaData,
     Text,
@@ -14,24 +13,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import text, func
 
-SQL_HOST = os.getenv("SQL_HOST")
-SQL_PORT = int(os.getenv("SQL_PORT"))
-SQL_USER = os.getenv("SQL_USER")
-SQL_PASS = os.getenv("SQL_PASS")
-SQL_DB = os.getenv("SQL_DB")
+basedir = os.path.dirname(os.path.realpath(__file__))
 
-engine = create_engine(
-    "mysql+mysqldb://{0}:{1}@{2}:{3}/{4}?charset=utf8mb4".format(
-        SQL_USER, SQL_PASS, SQL_HOST, SQL_PORT, SQL_DB
-    )
-)
+engine = create_engine("sqlite:///" + os.path.join(basedir, "main.db"))
 
 metadata = MetaData()
 
 dataset = Table(
     "dataset",
     metadata,
-    Column("id", BigInteger, primary_key=True),
+    Column("id", Integer,  primary_key=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column("dataset_id", Text, nullable=True, default=""),
     Column("hash_id", Text, nullable=True, default=""),
@@ -40,7 +31,7 @@ dataset = Table(
 model_training = Table(
     "model_training",
     metadata,
-    Column("id", BigInteger, primary_key=True),
+    Column("id", Integer, primary_key=True),
     Column("model_id", Text, nullable=True, default=""),
     Column("dataset_id", Text, nullable=True, default=""),
     Column("model_type", Text, nullable=True, default=""),

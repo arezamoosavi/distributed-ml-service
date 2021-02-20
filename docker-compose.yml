@@ -1,68 +1,11 @@
 version: "3.2"
 
 services:
-  celery: &base_app
+  api:
     build:
-      context: .
-      dockerfile: ./container/Dockerfile
-    env_file:
-      - ./container/.env_vars
-    volumes:
-      - ./src:/main
-    restart: unless-stopped
-    command: sh /run_celery.sh
-    # command: sleep infinity
-  apis:
-    <<: *base_app
+      context: ""
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    command: sh /run_web.sh
-  flower:
-    container_name: flower
-    image: mher/flower
-    environment:
-      - CELERY_BROKER_URL=amqp://admin:mypass@rabbitmq:5672
-      - FLOWER_PORT=8888
-    depends_on:
-      - rabbitmq
-      - celery
-    ports:
-      - "8888:8888"
-  rabbitmq:
-    image: rabbitmq:3.8.3-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=mypass
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    hostname: rabbitmq
     restart: unless-stopped
-  minio:
-    image: "bitnami/minio:latest"
-    hostname: minio
-    ports:
-      - "9000:9000"
-    expose:
-      - "9000"
-    # volumes:
-    #   - /storage/minio-data:/data
-    environment:
-      MINIO_ACCESS_KEY: AKIAIOSFODNN7EXAMPLE
-      MINIO_SECRET_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-  mysql:
-    image: mysql:8.0
-    ports:
-      - "3306:3306"
-    expose:
-      - "3306"
-      - "33060"
-    # volumes:
-    #   - ./storage/mysql-data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
-    environment:
-      MYSQL_ROOT_PASSWORD: "password"
-      MYSQL_DATABASE: "maindb"
-      MYSQL_USER: "mainuser"
-      MYSQL_PASSWORD: "mainpass"
-    restart: unless-stopped
+    command: sh /run.sh

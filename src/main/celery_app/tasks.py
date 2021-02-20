@@ -1,8 +1,7 @@
-import io, os, time, json
+import os, time, json
 import logging
 from datetime import datetime
 
-import tempfile
 import joblib
 
 import pandas as pd
@@ -14,8 +13,8 @@ from sklearn.metrics import classification_report
 from celery import current_task
 from .app import app as celery_app
 
-from application.utils.mysql_db import update_json_data
-from application.utils.minio_connection import MinioClient
+from utils.mysql_db import update_json_data
+
 
 # logging
 logging.basicConfig(
@@ -23,20 +22,12 @@ logging.basicConfig(
     format="%(asctime)s | {%(pathname)s:%(lineno)d} | %(module)s | %(levelname)s | %(funcName)s | %(message)s",
 )
 
-try:
-    minio_obj = MinioClient()
-    minio_client = minio_obj.client()
-except Exception as e:
-    logging.error(str(e))
-
-
 @celery_app.task(name="train_classifier")
 def train_clf(data_json):
-    # get csv data
+    # get csv data dir
     try:
-        file_data = minio_client.get_object("dataset", f'{data_json["dataset_id"]}.csv')
-        buffer_data = io.BytesIO(file_data.data)
-        df = pd.read_csv(buffer_data)
+        file_path = os.path.join(os.getcwd(), "storage", f'{data_json["dataset_id"]}.csv')
+        df = pd.read_csv(file_path)
     except Exception as e:
         msg_result = "dataset_id is wrong"
         logging.error(msg_result + f": {str(e)}")
@@ -127,21 +118,10 @@ def train_clf(data_json):
         "update_data": {"finished": datetime.now(), "duration": duration, "result": json.dumps(json_result), },
     }
 
-    # save to minio
-    logging.info("Write to minio: ")
+    # save to dir
     try:
-        with tempfile.TemporaryFile() as fp:
-            joblib.dump(model, fp)
-            fp.seek(0)
-            _buffer = io.BytesIO(fp.read())
-            _length = _buffer.getbuffer().nbytes
-            minio_client.put_object(
-                bucket_name="models",
-                object_name=f"{res_data['model_id']}.joblib",
-                data=_buffer,
-                length=_length,
-            )
-        logging.info("Saved to minio: ")
+        model_path = os.path.join(os.getcwd(), "storage", f"{res_data['model_id']}.joblib")
+        joblib.dump(model, model_path)
     except Exception as e:
         msg_result = "error when trying to save the model, try again later!"
         logging.error(msg_result + f": {str(e)}")
@@ -156,7 +136,7 @@ def train_clf(data_json):
             pass
         return msg_result
 
-    # save results to mysql
+    # save results to db
     try:
         update_json_data(res_data, "model_training")
     except Exception as e:

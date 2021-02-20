@@ -3,13 +3,14 @@ from celery import Celery
 import os
 
 basedir = os.path.dirname(os.path.realpath(__file__))
-BROKER_URL = os.environ.get("RMQ_URL", "amqp://admin:mypass@rabbitmq:5672")
 
 app = Celery(
     "ml_app",
-    broker=BROKER_URL,
+    broker="sqla+sqlite:///" + os.path.join(basedir, "celery.db"),
     backend="db+sqlite:///" + os.path.join(basedir, "celery_results.db"),
-    include=["application.celery_app.tasks",],
+    include=[
+        "celery_app.tasks",
+    ],
 )
 
 app.conf["task_acks_late"] = True

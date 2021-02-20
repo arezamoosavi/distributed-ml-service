@@ -1,11 +1,11 @@
 import os, io, hashlib, uuid
 import logging
+import pandas as pd
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
 
-from application.utils.mysql_db import insert_json_data, get_data_if_exists
-from application.utils.minio_connection import MinioClient
+from utils.mysql_db import insert_json_data, get_data_if_exists
 
 
 # logging
@@ -14,14 +14,6 @@ logging.basicConfig(
     format="%(asctime)s | {%(pathname)s:%(lineno)d} | %(module)s | %(levelname)s | %(funcName)s | %(message)s",
 )
 
-try:
-    minio_obj = MinioClient()
-    minio_client = minio_obj.client()
-    minio_client.make_bucket("dataset")
-except Exception as e:
-    logging.error(str(e))
-
-
 router = APIRouter()
 
 
@@ -29,7 +21,6 @@ router = APIRouter()
 async def load_data(dataset: UploadFile = File(None),):
     read_file = await dataset.read()
     data_buffer = io.BytesIO(read_file)
-    buffer_length = data_buffer.getbuffer().nbytes
 
     md5 = hashlib.md5()
     md5.update(read_file)
@@ -41,15 +32,13 @@ async def load_data(dataset: UploadFile = File(None),):
             content={"info": "ok", "data_id": json_data["dataset_id"]}, status_code=200
         )
 
-    # save obj to minio with token
+    # save obj to dir with token
     try:
         json_data = {"dataset_id": uuid.uuid4().hex, "hash_id": hash_id}
-        minio_client.put_object(
-            bucket_name="dataset",
-            object_name=f'{json_data["dataset_id"]}.csv',
-            data=data_buffer,
-            length=buffer_length,
-        )
+        df = pd.read_csv(data_buffer)
+        file_path = os.path.join(os.getcwd(), "storage", f'{json_data["dataset_id"]}.csv')
+        df.to_csv(file_path, index=False)
+
         insert_json_data(json_data, "dataset")
 
     except Exception as e:
